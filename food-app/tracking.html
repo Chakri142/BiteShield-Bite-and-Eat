@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FoodQA — Live Tracking</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg-flow"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="bg-grid"></div></div>
+<div id="loader"><div class="loader-food">🛵</div><div class="loader-bar"><i></i></div></div>
+<div id="appHeader"></div>
+<main class="wrap page-anim">
+  <div class="sec-head"><h2>🛵 Live Order Tracking</h2><p>Watch your rider move in real time</p></div>
+  <div class="track-map">
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;align-items:center">
+      <div><h3 style="color:var(--purple-deep)" id="orderTitle">Order</h3><p style="color:var(--muted);font-size:13px" id="orderMeta"></p><p class="live-time">🕒 Local time now: <b id="liveClock">--:--:--</b> · <span id="elapsedLive">Tracking live</span></p></div>
+      <span class="pill" style="font-size:13px;padding:7px 14px">⏱ ETA: <b id="etaText">25 min</b></span>
+    </div>
+    <div class="track-road">
+      <div class="line"></div><div class="fill" id="trackFill"></div>
+      <span class="pin" style="left:3%">🏠</span><span class="pin" style="right:3%">🍽️</span>
+      <span class="bike" id="trackBike" style="left:5%">🛵</span>
+    </div>
+    <div class="status-steps" id="statusSteps"><span>Placed</span><span>Preparing</span><span>On the Way</span><span>Delivered</span></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
+      <button class="btn btn-primary btn-sm" onclick="restartTrack()">↻ Restart Tracking</button>
+      <a class="btn btn-ghost btn-sm" href="orders.html">📦 My Orders</a>
+      <a class="btn btn-orange btn-sm" href="index.html">🍽️ Order More</a>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:18px">
+    <h3 style="color:var(--purple-deep);margin-bottom:12px">🧾 Order Items</h3>
+    <div id="itemsBox"></div>
+  </div>
+</main>
+<div id="appFooter"></div>
+<script src="app.js"></script>
+<script>
+window.addEventListener('load',function(){setTimeout(function(){document.getElementById('loader').classList.add('done')},900)});
+setTimeout(function(){document.getElementById('loader').classList.add('done')},2500);
+FoodQA.mount('orders');
+var orders=FoodQA.getOrders();
+var order=orders[0];
+var trackIv=null;
+function renderOrder(){
+  if(!order){document.querySelector('.track-map').innerHTML='<div class="empty"><span class="big">📦</span><b>No orders yet.</b><br>Place your first order!<br><a class="btn btn-orange" href="index.html" style="margin-top:16px">🍽️ Browse Restaurants</a></div>';return}
+  if(!order.createdAt){order.createdAt=Date.now();order.etaMinutes=30;FoodQA.store('foodqa_orders',orders)}
+  document.getElementById('orderTitle').textContent='Order #'+order.id;
+  document.getElementById('orderMeta').textContent=order.time+' • '+order.pay+' • '+order.address;
+  var h='';
+  order.items.forEach(function(it){h+='<div class="summary-row"><span>'+it.emoji+' '+it.name+' × '+it.qty+'</span><b>'+FoodQA.money(it.price*it.qty)+'</b></div>'});
+  h+='<div class="summary-row total"><span>Total Paid</span><span>'+FoodQA.money(order.total)+'</span></div>';
+  document.getElementById('itemsBox').innerHTML=h;
+}
+function restartTrack(){
+  clearInterval(trackIv);
+  var fill=document.getElementById('trackFill'),bike=document.getElementById('trackBike'),sts=document.querySelectorAll('#statusSteps span');
+  if(!fill||!order)return;
+  var duration=(order.etaMinutes||30)*60*1000;
+  function tick(){
+    var now=Date.now();
+    document.getElementById('liveClock').textContent=new Intl.DateTimeFormat(undefined,{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date(now));
+    var elapsed=Math.max(0,now-order.createdAt),p=Math.min(100,(elapsed/duration)*100);
+    fill.style.width=p+'%';bike.style.left=Math.max(5,Math.min(95,5+p*.9))+'%';
+    var stage=p<15?0:(p<48?1:(p<92?2:3));
+    sts.forEach(function(s,i){s.className=i<stage?'done':(i===stage?'on':'')});
+    var mins=Math.max(0,Math.ceil((duration-elapsed)/60000));
+    document.getElementById('etaText').textContent=p>=100?'Delivered! 🎉':mins+' min';
+    document.getElementById('elapsedLive').textContent='Elapsed '+Math.floor(elapsed/60000)+'m '+Math.floor((elapsed%60000)/1000)+'s · updates every second';
+    if(p>=100){order.status='Delivered';FoodQA.store('foodqa_orders',orders)}
+    else if(p>=92)order.status='On the Way';else if(p>=15)order.status='Preparing';else order.status='Placed';
+  }
+  tick();trackIv=setInterval(tick,1000);
+}
+renderOrder();restartTrack();
+</script>
+</body>
+</html>

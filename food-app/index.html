@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FoodQA — Live 3D Food Delivery</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg-flow"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="bg-grid"></div></div>
+<div id="loader"><div class="loader-food">🍔</div><div class="loader-bar"><i></i></div><div style="color:var(--muted);font-size:12px;letter-spacing:2px;font-weight:800">LOADING FOODQA</div></div>
+<div id="appHeader"></div>
+<main class="wrap page-anim">
+  <div class="hero">
+    <div>
+      <span class="tag" style="display:inline-block;padding:6px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;background:var(--orange-soft);color:#9A3412">🍔 Live 3D Food Delivery</span>
+      <h1>Hungry? Order <span class="grad">hot &amp; fast</span> from top restaurants near you</h1>
+      <p>Browse 8 restaurants, compare prices, ratings, delivery times &amp; locations — add to cart, pay securely, and track your rider live. Synced with BiteShield QA testing!</p>
+      <div class="hero-btns">
+        <a class="btn btn-orange" href="#restaurants">🍽️ Browse Restaurants</a>
+        <a class="btn btn-ghost" href="cart.html">🛒 View Cart</a>
+      </div>
+    </div>
+    <div class="scene-wrap">
+      <div class="scene" id="scene">
+        <div class="orbit-ring"></div>
+        <div class="phone3d">
+          <div class="phone-screen">
+            <div class="phone-notch"></div>
+            <div class="phone-app">
+              <div class="pa-head"><b>🍔 FoodQA</b><span>📍 Chennai</span></div>
+              <div class="pa-search">🔍 Search biryani, pizza, dosa...</div>
+              <div class="pa-food"><div class="pa-thumb" style="background:#FDE68A">🍕</div><div><b>Cheese Burst Pizza</b><small>⭐ 4.7 • 20 min</small></div><em>₹299</em></div>
+              <div class="pa-food"><div class="pa-thumb" style="background:#FBCFE8">🍔</div><div><b>Smoky Burger</b><small>⭐ 4.6 • 15 min</small></div><em>₹199</em></div>
+              <div class="pa-food"><div class="pa-thumb" style="background:#A7F3D0">🍛</div><div><b>Chicken Biryani</b><small>⭐ 4.8 • 25 min</small></div><em>₹249</em></div>
+              <div class="pa-cart">🛒 View Cart • Live</div>
+            </div>
+          </div>
+        </div>
+        <div class="float-card fc1"><b>4.8 ⭐</b><span>Top Rated</span></div>
+        <div class="float-card fc2"><b>15 min</b><span>Fastest Delivery</span></div>
+        <div class="float-card fc3"><b>₹49</b><span>Starting Price</span></div>
+        <div class="float-card fc4"><b>8</b><span>Restaurants</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-head reveal" id="restaurants">
+    <h2>🍽️ Categories</h2>
+    <p>Tap a category to filter restaurants</p>
+  </div>
+  <div class="cats reveal" id="catRow"></div>
+
+  <div class="sec-head reveal">
+    <h2>🏪 Restaurants Near You</h2>
+    <p id="restCount"></p>
+  </div>
+  <div class="rest-grid" id="restGrid"></div>
+  <div class="empty" id="noRest" style="display:none"><span class="big">🔍</span><b>No restaurants found.</b><br>Try a different search or category.</div>
+
+  <div class="offer-banner reveal">
+    <div><h3>🎉 First Order Offer!</h3><p>Use code <code>FOOD50</code> for ₹50 OFF • <code>FIRST100</code> for ₹100 OFF</p></div>
+    <a class="btn btn-primary" href="cart.html">🛒 Go to Cart</a>
+  </div>
+</main>
+<div id="appFooter"></div>
+<script src="app.js"></script>
+<script>
+window.addEventListener('load',function(){setTimeout(function(){document.getElementById('loader').classList.add('done')},1200)});
+setTimeout(function(){document.getElementById('loader').classList.add('done')},2800);
+FoodQA.mount('home');
+var activeCat='All', query=(FoodQA.getParam('q')||'').toLowerCase();
+var catRow=document.getElementById('catRow');
+FoodQA.CATEGORIES.forEach(function(c){
+  var d=document.createElement('div');d.className='cat'+(c===activeCat?' on':'');
+  d.innerHTML='<div class="ci">'+FoodQA.CAT_EMOJI[c]+'</div><span>'+c+'</span>';
+  d.onclick=function(){activeCat=c;document.querySelectorAll('.cat').forEach(function(x){x.classList.remove('on')});d.classList.add('on');renderRests()};
+  catRow.appendChild(d);
+});
+function renderRests(){
+  var grid=document.getElementById('restGrid');grid.innerHTML='';
+  var list=FoodQA.RESTAURANTS.filter(function(r){
+    var okCat=activeCat==='All'||r.cat===activeCat;
+    var okQ=!query||(r.name+' '+r.cuisine+' '+r.loc).toLowerCase().indexOf(query)>-1||r.items.some(function(it){return it.name.toLowerCase().indexOf(query)>-1});
+    return okCat&&okQ;
+  });
+  document.getElementById('restCount').textContent=list.length+' restaurant'+(list.length===1?'':'s')+' found'+(query?' for "'+query+'"':'');
+  document.getElementById('noRest').style.display=list.length?'none':'block';
+  list.forEach(function(r){
+    var card=document.createElement('div');card.className='rest-card reveal in';
+    card.innerHTML='<div class="rest-img" style="background:'+r.bg+'"><span class="rest-off">'+r.offer+'</span>'+r.emoji+'</div>'+
+      '<div class="rest-body"><h3>'+r.name+'</h3>'+
+      '<div class="rest-meta"><span class="pill">⭐ '+r.rating+'</span><span class="pill gray">⏱ '+r.time+'</span><span class="pill gray">📍 '+r.dist+'</span></div>'+
+      '<div style="font-size:12.5px;color:var(--muted)">'+r.cuisine+' • '+r.loc+'</div>'+
+      '<div class="rest-foot"><b class="starting-price">From ₹'+Math.min.apply(null,r.items.map(function(it){return it.price}))+'</b><span>'+r.price+' • View Menu →</span></div></div>';
+    card.onclick=function(){location.href='restaurant.html?id='+r.id};
+    grid.appendChild(card);
+  });
+  FoodQA.tiltBind&&document.querySelectorAll('.rest-card').forEach(function(card){
+    card.addEventListener('mousemove',function(e){var r=card.getBoundingClientRect();var x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;card.style.transform='perspective(700px) rotateY('+(x*10)+'deg) rotateX('+(-y*10)+'deg) translateY(-5px)'});
+    card.addEventListener('mouseleave',function(){card.style.transform=''});
+  });
+}
+renderRests();
+(function(){
+  var scene=document.getElementById('scene');if(!scene)return;
+  var wrap=scene.closest('.scene-wrap');
+  wrap.addEventListener('mousemove',function(e){var r=wrap.getBoundingClientRect();var x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;scene.style.transform='rotateY('+(x*22)+'deg) rotateX('+(-y*16)+'deg)'});
+  wrap.addEventListener('mouseleave',function(){scene.style.transform=''});
+})();
+</script>
+</body>
+</html>

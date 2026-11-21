@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FoodQA — Checkout</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg-flow"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="bg-grid"></div></div>
+<div id="loader"><div class="loader-food">💳</div><div class="loader-bar"><i></i></div></div>
+<div id="appHeader"></div>
+<main class="wrap page-anim">
+  <div class="sec-head"><h2>💳 Checkout</h2><p>Delivery address &amp; payment — almost there!</p></div>
+  <div class="two-col">
+    <div class="panel">
+      <h3 style="color:var(--purple-deep);margin-bottom:16px">📍 Delivery Address</h3>
+      <form id="coForm">
+        <div class="field"><label>👤 Full Name</label><input id="fName" required placeholder="Your name"></div>
+        <div class="field"><label>📱 Phone Number</label><input id="fPhone" required placeholder="98765 43210"></div>
+        <div class="field"><label>🏠 Full Address</label><textarea id="fAddr" rows="2" required placeholder="House no, street, landmark..."></textarea></div>
+        <div class="field"><label>📍 Area / Location</label><input id="fArea" required placeholder="e.g. Anna Nagar, Chennai"></div>
+        <h3 style="color:var(--purple-deep);margin:20px 0 12px">💰 Payment Method</h3>
+        <label class="pay-opt on"><input type="radio" name="pay" value="UPI" checked> 📲 UPI (GPay / PhonePe)</label>
+        <label class="pay-opt"><input type="radio" name="pay" value="Card"> 💳 Credit / Debit Card</label>
+        <label class="pay-opt"><input type="radio" name="pay" value="Cash on Delivery"> 💵 Cash on Delivery</label>
+        <div class="form-error" id="errBox"></div>
+        <button class="btn btn-orange btn-block" type="submit" style="margin-top:10px">✅ Place Order →</button>
+      </form>
+    </div>
+    <div class="panel">
+      <h3 style="color:var(--purple-deep);margin-bottom:12px">🧾 Order Summary</h3>
+      <div id="sumBox"></div>
+      <p style="font-size:12px;color:var(--muted);margin-top:12px">🔒 Payments are simulated in this demo (like the BiteShield payment sandbox).</p>
+    </div>
+  </div>
+</main>
+<div id="appFooter"></div>
+<script src="app.js"></script>
+<script>
+window.addEventListener('load',function(){setTimeout(function(){document.getElementById('loader').classList.add('done')},900)});
+setTimeout(function(){document.getElementById('loader').classList.add('done')},2500);
+FoodQA.mount('cart');
+if(!FoodQA.requireLogin('checkout.html')){}
+var u=FoodQA.currentUser();
+if(u){document.getElementById('fName').value=u.name;document.getElementById('fPhone').value=u.phone||''}
+document.querySelectorAll('.pay-opt').forEach(function(o){o.addEventListener('click',function(){document.querySelectorAll('.pay-opt').forEach(function(x){x.classList.remove('on')});o.classList.add('on')})});
+function renderSum(){
+  var cart=FoodQA.getCart();
+  if(!cart.length){document.getElementById('sumBox').innerHTML='<p style="color:var(--muted)">Cart is empty. <a href="index.html" style="color:var(--purple-dark);font-weight:800">Add food →</a></p>';return}
+  var h='';
+  cart.forEach(function(c){var f=FoodQA.findDish(c.id);if(f)h+='<div class="summary-row"><span>'+f.dish.emoji+' '+f.dish.name+' × '+c.qty+'</span><b>'+FoodQA.money(f.dish.price*c.qty)+'</b></div>'});
+  var sub=FoodQA.cartTotal(),coupon=FoodQA.store('foodqa_coupon'),off=coupon?FoodQA.COUPONS[coupon].off:0,del=sub>=499?0:30;
+  h+='<div class="summary-row"><span>Delivery</span><b>'+(del?FoodQA.money(del):'FREE')+'</b></div>';
+  if(off)h+='<div class="summary-row"><span>Coupon</span><b style="color:#047857">−'+FoodQA.money(off)+'</b></div>';
+  h+='<div class="summary-row total"><span>Total</span><span>'+FoodQA.money(Math.max(0,sub-off)+del)+'</span></div>';
+  document.getElementById('sumBox').innerHTML=h;
+}
+renderSum();
+document.getElementById('coForm').addEventListener('submit',function(e){
+  e.preventDefault();
+  if(!FoodQA.getCart().length){document.getElementById('errBox').textContent='⚠️ Your cart is empty.';document.getElementById('errBox').classList.add('show');return}
+  var addr=document.getElementById('fAddr').value.trim()+', '+document.getElementById('fArea').value.trim();
+  var pay=document.querySelector('input[name=pay]:checked').value;
+  var order=FoodQA.placeOrder(addr,pay);
+  if(!order){document.getElementById('errBox').textContent='⚠️ Could not place order.';document.getElementById('errBox').classList.add('show');return}
+  FoodQA.toast('🎉 Order '+order.id+' placed!');
+  setTimeout(function(){location.href='tracking.html'},800);
+});
+</script>
+</body>
+</html>
